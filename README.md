@@ -57,7 +57,6 @@ More complexed, with query builder
 	DB::getInstance()->insert("users", $data);
 	
 ### Insert with prepared statement
-
 Third param for `insert()` method is "unique prepared stmt key". Every insert witch have that key will use the same prepared statement.
 
 	foreach($data_array as $data) {
@@ -65,17 +64,43 @@ Third param for `insert()` method is "unique prepared stmt key". Every insert wi
 	}
 
 ### Update
-
 Some examples of update statement
 	
 	$user_id = 1;
 	DB::getInstance()->update("users", $data, "user_id = ?", $user_id);
 	DB::getInstance()->update("users", $data, "user_id = ? AND email = ?", array(1, "user@example.com"));
 	
+	
+### Saving data
+Automatic determination of INSERT or UPDATE. If $data['user_id'] exits it will be UPDATE, otherwise it will be INSERT.
+
+	DB::getInstance()->save("users", $data, "user_id"); // user_id is name of PRIMARY column
+	
 ### More examples
 	
-	DB::getInstance()->delete("users", "user_id = 1"); // delete object
-	DB::getInstance()->count("users"); // count table
-	DB::getInstance()->executeQuery("SELECT * FROM users")->fetchCollection(new User); // collection of User objects (User[])
+	// Delete row in table
+	// some as DB::getInstance()->exec("DELETE FROM users WHERE user_id = 1");
+	DB::getInstance()->delete("users", "user_id = 1");
 	
+	// Count rows in table
+	$count = DB::getInstance()->count("users");
 	
+	/* @var User[] $users Collection of User objects */
+	$users = DB::getInstance()
+		->executeQuery("SELECT * FROM users")
+		->fetchCollection(new User);
+	
+### Get columns from table
+	
+	// array("user_id, "username", "password", ...)
+	$columns = DB::getInstance()->getColumnsFromTable("users");
+	
+	// array("u.user_id AS u_user_id, u.username as u_username, ...)
+	$columns = DB::getInstance()->getColumnsFromTable("users", "u", "_");
+	
+	// previous statement is useful for build select without column name coalisation
+	// This will produce:
+	// SELECT u.user_id AS u_user_id, u.username as u_username, u.mtime AS u_mtime p.post_id AS p_post_id, p.mtime AS p_mtime
+	DB::getInstance()
+		->select(implode(", DB::DB::getInstance()->getColumnsFromTable("users", "u", "_")))
+		->select(implode(", DB::DB::getInstance()->getColumnsFromTable("posts", "p", "_")));
