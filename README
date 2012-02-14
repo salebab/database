@@ -1,0 +1,4 @@
+PHP/MySQL Database wrapper
+==========================
+
+MySQL datadabase wrapper for PHP extends PDO and PDOStatement classes and adds some nice functionality.
