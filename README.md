@@ -26,7 +26,7 @@ More complexed, with query builder
 		/**
 		 * @var User
 		 */
-		public $user;
+		public $author;
 	}
 	
 	$sql = DB::getInstance()
