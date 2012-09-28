@@ -344,7 +344,7 @@ class DBWrapper extends PDO
     function getColumnsFromTable($table)
     {
         $sql = "DESCRIBE $table";
-        
+
         return $this->executeQuery($sql)
             ->fetchAll(self::FETCH_COLUMN);
     }

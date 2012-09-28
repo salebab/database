@@ -40,14 +40,15 @@ class DBStatement extends PDOStatement
      * Note: After value is assigned to property, it will be unset from last_row
      *
      * @param object $object
-     * @param string $from_table
+     * @param string $from_table If isn't used, method will return all data in one object
      * @param int $fetch_from Fetch data from next or last fetched row. DBWrapper::FETCH_FROM_NEXT_ROW or DBWrapper::FETCH_FROM_LAST_ROW
-     * @return object $object
+     * @return object|NULL
      */
     function fetchInto($object, $from_table = "", $fetch_from = DBWrapper::FETCH_FROM_NEXT_ROW)
     {
 
         if ($from_table == "") {
+            $this->db->setFetchTableNames(0);
             $this->setFetchMode(DBWrapper::FETCH_INTO, $object);
             return $this->fetch();
         } elseif ($fetch_from == DBWrapper::FETCH_FROM_NEXT_ROW) {
@@ -60,7 +61,7 @@ class DBStatement extends PDOStatement
         }
 
         $table = "";
-        // Assign values of last_row to object's properties
+        // Copy values of last_row to object's properties
         foreach ($this->last_row as $key => $value) {
 
             if ($this->db->fetch_table_names) {
@@ -69,11 +70,12 @@ class DBStatement extends PDOStatement
                 $column = $key;
             }
 
-            // assign
+            // copy
             if ($from_table == $table OR empty($table)) {
                 $object->{$column} = $value;
                 unset($this->last_row[$key]);
-            } // For aliases or functions (count()), assign to first object
+            }
+            // For aliases or functions (count()), assign to first object
             // example: .store_total_books become store.total_books
             elseif ($from_table != "" && $table == "" && substr($key, 1, strlen($from_table)) == $from_table) {
                 $column = substr($key, strlen($from_table) + 2);
@@ -90,8 +92,8 @@ class DBStatement extends PDOStatement
      * This is shortcut for fetchInto($object, $from_table, DBWrapper::FETCH_FROM_LAST_ROW);
      *
      * @param object $object
-     * @param string $from_table MUST NOT BE EMPTY
-     * @return object $object
+     * @param string $from_table
+     * @return object|NULL
      */
     function fetchIntoFromLastRow($object, $from_table)
     {
@@ -99,43 +101,30 @@ class DBStatement extends PDOStatement
     }
 
     /**
-     * Fetch collection of objects
-     * All rows will be fetch into cloned object
-     *
-     * $obj and $this is passed to event
+     * Fetch collection of objects (do the some thing as fetchAll)
      *
      * @param string|object $class_name
-     * @param string $from_table
      * @return array
      */
-    function fetchCollection($class_name, $from_table = "")
+    function fetchCollection($class_name = "stdClass")
     {
-        $collection = array();
-
-        if (!$this->rowCount()) {
-            return $collection;
-        }
-
         /* backward compatibility, you can use object instead of class name */
         if (is_object($class_name)) {
             $class_name = get_class($class_name);
         }
 
-        while ($obj = $this->fetchInto(new $class_name, $from_table)) {
-            $collection[] = $obj;
-        }
-        return $collection;
+        return $this->fetchAll(PDO::FETCH_INTO, $class_name);
     }
 
     /**
-     * Get value from column, by column name
+     * Get value from column, from last row
      *
      * @param string $column_name
-     * @return mixed
+     * @return mixed|NULL
      */
     function getColumnValue($column_name)
     {
-        return $this->last_row[$column_name];
+        return isset($this->last_row[$column_name]) ? $this->last_row[$column_name] : NULL;
     }
 
     function closeCursor()
