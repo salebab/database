@@ -35,6 +35,10 @@ class DBWrapper extends PDO
     private $check_columns = false;
 
 
+    /**
+     * Positive if PDO::FETCH_TABLE_NAMES is used
+     * @var int
+     */
     public $fetch_table_names = 0;
 
     /**
@@ -169,7 +173,6 @@ class DBWrapper extends PDO
      */
     function insert($table, $data, $prev_stmt_id = null)
     {
-
         if(is_object($data)) {
             $data = (array) $data;
         }
@@ -335,56 +338,14 @@ class DBWrapper extends PDO
     /**
      * Get all columns from table
      *
-     * NOTE - Caching is not supported in this version.
-     *
      * @param $table
-     * @param string $table_alias
-     * @param string $use_delimiter
-     * @param bool $caching
-     * @return array|mixed|null
+     * @return array
      */
-    function getColumnsFromTable($table, $table_alias = "", $use_delimiter = "_", $caching = false)
+    function getColumnsFromTable($table)
     {
-        $cache_id = $cache = $columns = null;
-
-        // Using caching?
-        /*
-		if ($caching) {
-            // build ID of cache, that is cachefilename
-            $cache_id = "sql_columns_" . $table;
-            if ($table_alias) {
-                $cache_id .= "_" . $table_alias;
-            }
-
-            include_once SYSTEM_DIR . "/libraries/caching/Cache.php";
-            $cache = new Cache();
-            $columns = $cache->get($cache_id);
-        }
-		*/
-        // No cached data
-        if (!$columns) {
-            $sql = "DESCRIBE $table";
-            $r = $this->executeQuery($sql);
-            $columns = $r->fetchAll(self::FETCH_COLUMN);
-
-            // Using table alias?
-            // Modify column to "table.column AS alias_column"
-            if (!empty($table_alias)) {
-                foreach ($columns as $key => $column) {
-                    $new_column = $table_alias . "." . $column;
-                    if (!empty($use_delimiter)) {
-                        $new_column .= " AS " . $table_alias . $use_delimiter . $column;
-                    }
-                    $columns[$key] = $new_column;
-                }
-            }
-            // Save columns to cache
-            /*
-               if ($caching) {
-                   $cache->save($cache_id, $columns);
-               }
-               */
-        }
+        $sql = "DESCRIBE $table";
+        $r = $this->executeQuery($sql);
+        $columns = $r->fetchAll(self::FETCH_COLUMN);
 
         return $columns;
     }
@@ -402,7 +363,7 @@ class DBWrapper extends PDO
     {
 
         if (isset($data[$column_id_name])) {
-            $column_id = (int)$data[$column_id_name];
+            $column_id = (int) $data[$column_id_name];
         } else {
             $column_id = 0;
         }
@@ -415,6 +376,11 @@ class DBWrapper extends PDO
     }
 
 
+    /**
+     * Set fetch table names attribute
+     *
+     * @param int $option 1 or 0
+     */
     function setFetchTableNames($option = 1)
     {
         $this->setAttribute(self::ATTR_FETCH_TABLE_NAMES, $option);
