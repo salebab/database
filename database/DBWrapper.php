@@ -21,7 +21,7 @@ class DBWrapper extends PDO
 
     /**
      * Previous column used
-     * ONLY if #$prev_stmt is used
+     * ONLY if $prev_stmt is used
      *
      * @var array
      */
@@ -85,19 +85,19 @@ class DBWrapper extends PDO
      *
      * @param string $table
      * @param array $data
-     * @param mixed $prev_column_id
+     * @param mixed $stmt_key
      * @return array
      */
-    private function removeNonExistentColumns($table, &$data, $prev_column_id = null)
+    private function removeNonExistentColumns($table, &$data, $stmt_key = null)
     {
         if ($this->check_columns) {
 
             // use previous columns or get new
-            if (!empty($prev_column_id) && empty($this->prev_columns[$prev_column_id])) {
-                $this->prev_columns[$prev_column_id] = $this->getColumnsFromTable($table);
-                $columns = $this->prev_columns[$prev_column_id];
-            } elseif (!empty($prev_column_id) && !empty($this->prev_columns[$prev_column_id])) {
-                $columns = $this->prev_columns[$prev_column_id];
+            if (!empty($stmt_key) && empty($this->prev_columns[$stmt_key])) {
+                $this->prev_columns[$stmt_key] = $this->getColumnsFromTable($table);
+                $columns = $this->prev_columns[$stmt_key];
+            } elseif (!empty($stmt_key) && !empty($this->prev_columns[$stmt_key])) {
+                $columns = $this->prev_columns[$stmt_key];
             }
             else {
                 $columns = $this->getColumnsFromTable($table);
@@ -167,48 +167,44 @@ class DBWrapper extends PDO
      *
      * @param string $table
      * @param array $data
-     * @param int|string|null $prev_stmt_id Unique ID to use previous prepared stmt
+     * @param int|string|null $stmt_key Unique key to use previous prepared stmt
      *
      * @return void
      */
-    function insert($table, $data, $prev_stmt_id = null)
+    function insert($table, $data, $stmt_key = null)
     {
         if(is_object($data)) {
             $data = (array) $data;
         }
 
-        $data = $this->removeNonExistentColumns($table, $data, $prev_stmt_id);
+        $data = $this->removeNonExistentColumns($table, $data, $stmt_key);
 
-        // regular
-        if (empty($prev_stmt_id)) {
+        if (empty($stmt_key)) {
             $stmt = $this->getInsertStmt($table, $data);
-        } // set and use stmt
-        elseif (empty($this->prev_stmt[$prev_stmt_id])) {
-            $this->prev_stmt[$prev_stmt_id] = $this->getInsertStmt($table, $data);
-            $stmt = $this->prev_stmt[$prev_stmt_id];
         }
-        // use previous stmt
+        elseif (empty($this->prev_stmt[$stmt_key])) {
+            $this->prev_stmt[$stmt_key] = $this->getInsertStmt($table, $data);
+            $stmt = $this->prev_stmt[$stmt_key];
+        }
         else {
-            $stmt = $this->prev_stmt[$prev_stmt_id];
+            $stmt = $this->prev_stmt[$stmt_key];
         }
 
         $stmt->execute(array_values($data));
     }
 
     /**
-     * Update row in table
-     * example:
-     * update("users",  array("name" => "salebab"), "user_id = ?", $user_id)
+     * Update row in table, optionally use previous prepared stmt by stmt_key
      *
      * @throw PDOException
      *
      * @param string $table
      * @param array $data
      * @param mixed $where
-     * @param mixed $where_params
-     * @param int|string|null $prev_stmt_id Unique ID to use previous prepared stmt
+     * @param mixed|array $where_params
+     * @param int|string|null $stmt_key Unique key to use previous prepared stmt
      */
-    function update($table, $data, $where, $where_params = array(), $prev_stmt_id = null)
+    function update($table, $data, $where, $where_params = array(), $stmt_key = null)
     {
         if (!is_array($where)) {
             $where = array($where);
@@ -218,23 +214,22 @@ class DBWrapper extends PDO
             $data = (array) $data;
         }
 
-        $data = $this->removeNonExistentColumns($table, $data, $prev_stmt_id);
+        $data = $this->removeNonExistentColumns($table, $data, $stmt_key);
 
         // support for scalar param
         if (!is_array($where_params)) {
             $where_params = array($where_params);
         }
 
-        // regular
-        if (empty($prev_stmt_id)) {
-            $stmt = $this->getUpdateStmt($table, $data, $where);
-        } // set and use stmt
-        elseif (empty($this->prev_stmt[$prev_stmt_id])) {
+        if (empty($stmt_key)) {
             $stmt = $this->getUpdateStmt($table, $data, $where);
         }
-        // use previous stmt
-        else {
+        elseif (empty($this->prev_stmt[$stmt_key])) {
             $stmt = $this->getUpdateStmt($table, $data, $where);
+            $this->prev_stmt[$stmt_key] = $stmt;
+        }
+        else {
+            $stmt = $this->prev_stmt[$stmt_key];
         }
 
 
@@ -244,14 +239,16 @@ class DBWrapper extends PDO
     /**
      * Delete rows from table
      *
+     * @throw PDOException
+     *
      * @param string $table
      * @param mixed $where
-     * @param string $where_operand AND|OR
+     * @param mixed $where_params
      */
-    function delete($table, $where, $where_operand = "AND")
+    function delete($table, $where, $where_params)
     {
-        $sql = "DELETE FROM " . $table . $this->buildWhere($where, $where_operand);
-        $this->exec($sql);
+        $sql = "DELETE FROM " . $table . $this->buildWhere($where);
+        $this->executeQuery($sql, $where_params);
     }
 
     /**
@@ -273,6 +270,8 @@ class DBWrapper extends PDO
 
     /**
      * Prepare & execute query with params
+     *
+     * @throw PDOException
      *
      * @param $sql
      * @param null $params
@@ -298,7 +297,6 @@ class DBWrapper extends PDO
      */
     function buildWhere($where, $operand = "AND")
     {
-
         if (empty($where)) {
             return "";
         }
@@ -338,40 +336,38 @@ class DBWrapper extends PDO
     /**
      * Get all columns from table
      *
+     * @throw PDOException
+     *
      * @param $table
      * @return array
      */
     function getColumnsFromTable($table)
     {
         $sql = "DESCRIBE $table";
-        $r = $this->executeQuery($sql);
-        $columns = $r->fetchAll(self::FETCH_COLUMN);
-
-        return $columns;
+        
+        return $this->executeQuery($sql)
+            ->fetchAll(self::FETCH_COLUMN);
     }
 
     /**
      * Save data to table
      *
+     * @throw PDOException
+     *
      * @param string $table
      * @param array $data
-     * @param string $column_id_name
-     * @param string|int $prev_stmt_id
+     * @param string $primary_key Name of primary key column
+     * @param string|int $stmt_key
      * @return void
      */
-    function save($table, $data, $column_id_name, $prev_stmt_id = null)
+    function save($table, $data, $primary_key, $stmt_key = null)
     {
-
-        if (isset($data[$column_id_name])) {
-            $column_id = (int) $data[$column_id_name];
-        } else {
-            $column_id = 0;
+        // Update if primary key exists in data set or insert new row
+        if (!empty($data[$primary_key])) {
+            $this->update($table, $data, $primary_key . " = ?", $data[$primary_key], $stmt_key);
         }
-
-        if ($column_id > 0) {
-            $this->update($table, $data, $column_id_name . " = ?", $column_id, $prev_stmt_id);
-        } else {
-            $this->insert($table, $data, $prev_stmt_id);
+        else {
+            $this->insert($table, $data, $stmt_key);
         }
     }
 
