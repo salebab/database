@@ -17,9 +17,15 @@ Execute query and fetch User objects
 		->executeQuery($sql, array($user_id, 1))
 		->fetchInto(new User);
 	
-More complex, with query builder
+More complex, with query builder. You can build 'native' structure of objects.
+For example, you can fetch collection of object Post and every Post object may have a property $author which is a instance of User object
 
-	class User extends stdClass{}
+	class User extends stdClass {
+
+	    function getName() {
+	        return $this->first_name . " ". $this->last_name;
+	    }
+	}
 	
 	class Post extends stdClass {
 		
@@ -28,7 +34,8 @@ More complex, with query builder
 		 */
 		public $author;
 	}
-	
+
+	DB::getInstance()->setFetchTableNames(1);
 	$sql = DB::getInstance()
 		->select("p.*, u.*")
 		->from("posts p")
@@ -45,7 +52,11 @@ More complex, with query builder
 		$post->author = $stmt->fetchIntoFromLastRow(new User, "u");
 		$post_collection[] = $post;
 	}
-	
+
+	// Usage
+	foreach($post_collection as $post) {
+	    echo $post->author->getName();
+	}
 
 ### Insert 
 
