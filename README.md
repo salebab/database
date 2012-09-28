@@ -3,25 +3,25 @@ PHP/MySQL Database wrapper
 
 MySQL datadabase wrapper for PHP extends PDO and PDOStatement classes and adds some nice functionality.
 
-Examples of usage
+Usage examples
 -----------------
 
 ### Select
 Execute query and fetch User objects
 	
-	class User exteds DBObject {}
+	class User extends stdClass {}
 	
 	$user_id = 1;
-	$sql = "SELECT * FROM users WHERE user_id = ?";
+	$sql = "SELECT * FROM users WHERE user_id = ? AND is_active = ?";
 	$user = DB::getInstance()
-		->executeQuery($sql, $user_id)
+		->executeQuery($sql, array($user_id, 1))
 		->fetchInto(new User);
 	
-More complexed, with query builder
+More complex, with query builder
 
-	class User extends DBObject{}
+	class User extends stdClass{}
 	
-	class Post extends DBObject {
+	class Post extends stdClass {
 		
 		/**
 		 * @var User
@@ -80,7 +80,7 @@ Automatic determination of INSERT or UPDATE. If $data['user_id'] exits it will b
 	
 	// Delete row in table
 	// some as DB::getInstance()->exec("DELETE FROM users WHERE user_id = 1");
-	DB::getInstance()->delete("users", "user_id = 1");
+	DB::getInstance()->delete("users", "user_id = ?", $user_id);
 	
 	// Count rows in table
 	$count = DB::getInstance()->count("users");
@@ -89,18 +89,5 @@ Automatic determination of INSERT or UPDATE. If $data['user_id'] exits it will b
 	$users = DB::getInstance()
 		->executeQuery("SELECT * FROM users")
 		->fetchCollection(new User);
-	
-### Get columns from table
-	
-	// array("user_id, "username", "password", ...)
-	$columns = DB::getInstance()->getColumnsFromTable("users");
-	
-	// array("u.user_id AS u_user_id, u.username as u_username, ...)
-	$columns = DB::getInstance()->getColumnsFromTable("users", "u", "_");
-	
-	// previous statement is useful for build select without column name coalisation
-	// This will produce:
-	// SELECT u.user_id AS u_user_id, u.username as u_username, u.mtime AS u_mtime p.post_id AS p_post_id, p.mtime AS p_mtime
-	DB::getInstance()
-		->select(implode(", DB::DB::getInstance()->getColumnsFromTable("users", "u", "_")))
-		->select(implode(", DB::DB::getInstance()->getColumnsFromTable("posts", "p", "_")));
+
+[See more examples for Sakila database](https://github.com/salebab/database/tree/master/sakila-examples)
