@@ -1,6 +1,12 @@
 <?php
 include_once "_config.php";
 include_once "../database/database.php";
+
+class Customer {}
+class City {}
+class Address {}
+class Store {}
+
 $db = new database\DB(DB_DSN, DB_USER, DB_PASS);
 
 $db->setFetchTableNames(1);
@@ -25,11 +31,11 @@ $stmt = $db->select("c.customer_id, c.first_name, c.last_name")
 
 $customers = array();
 
-while($customer = $stmt->fetchInto(new stdClass, "c")) {
-    $customer->address = $stmt->fetchIntoFromLastRow(new stdClass, "ca");
-    $customer->address->city = $stmt->fetchIntoFromLastRow(new stdClass, "city");
+while($customer = $stmt->fetchInto(new Customer, "c")) {
+    $customer->address = $stmt->fetchIntoFromLastRow(new Address, "ca");
+    $customer->address->city = $stmt->fetchIntoFromLastRow(new City, "city");
 
-    $customer->store = new stdClass();
+    $customer->store = new Store;
     $stmt->fetchIntoFromLastRow($customer->store, "s");
     $stmt->fetchIntoFromLastRow($customer->store, "sa");
 
