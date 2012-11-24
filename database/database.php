@@ -1,10 +1,10 @@
 <?php
+namespace database;
+// register class auto loader for this namespace
+spl_autoload_register(function($class) {
+    $namespace = substr($class, 0, strripos($class, "\\"));
+    if($namespace == __NAMESPACE__) {
+        require basename($class).".php";
+    }
+});
 
-// config
-if(!defined("DB_DSN")) {
-    define("DB_DSN", "mysql:host=localhost;dbname=example");
-    define("DB_USER", "root");
-    define("DB_PASS", "");
-}
-
-include_once "DB.php";

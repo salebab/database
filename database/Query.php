@@ -1,11 +1,12 @@
 <?php
+namespace database;
 
 /**
- * DBQuery
+ * Query
  *
  * @author Sasa
  */
-class DBQuery
+class Query
 {
 
     protected $select = array();
@@ -20,16 +21,16 @@ class DBQuery
 
 
     /**
-     * @var DBWrapper
+     * @var DB
      */
     protected $db;
 
     /**
      * Database SQL Builder
      *
-     * @param DBWrapper $db
+     * @param DB $db
      */
-    function __construct(DBWrapper $db)
+    function __construct(DB $db)
     {
         $this->db = $db;
     }
@@ -42,7 +43,7 @@ class DBQuery
      *     ->select("b.*, COUNT(*) as total")
      *
      * @param string $statement
-     * @return DBQuery
+     * @return Query
      */
     function select($statement)
     {
@@ -58,7 +59,7 @@ class DBQuery
      * $sql->from("users u, posts p");
      *
      * @param string $statement
-     * @return DBQuery
+     * @return Query
      */
     function from($statement)
     {
@@ -75,7 +76,7 @@ class DBQuery
      *
      * @param string $statement
      * @param mixed $params
-     * @return DBQuery
+     * @return Query
      */
     function where($statement, $params = null)
     {
@@ -99,7 +100,7 @@ class DBQuery
      * @param string $column
      * @param array $params
      * @param bool $not_in Use NOT IN statement
-     * @return DBQuery
+     * @return Query
      */
     function whereIn($column, $params, $not_in = false)
     {
@@ -119,7 +120,7 @@ class DBQuery
      *
      * @param $column
      * @param $params
-     * @return DBQuery
+     * @return Query
      */
     function whereNotIn($column, $params)
     {
@@ -130,7 +131,7 @@ class DBQuery
      * Add statement for HAVING ...
      * @param string $statement
      * @param mixed $params
-     * @return DBQuery
+     * @return Query
      */
     function having($statement, $params = null)
     {
@@ -155,7 +156,7 @@ class DBQuery
      * $sql->join("INNER JOIN posts p ON p.user_id = u.user_id")
      *
      * @param string $statement
-     * @return DBQuery
+     * @return Query
      */
     function join($statement)
     {
@@ -171,7 +172,7 @@ class DBQuery
      * $sql->groupBy("u.is_active, p.post_id");
      *
      * @param string $statement
-     * @return DBQuery
+     * @return Query
      */
     function groupBy($statement)
     {
@@ -187,7 +188,7 @@ class DBQuery
      * $sql->orderBy("is_active, registered DESC");
      *
      * @param string $statement
-     * @return DBQuery
+     * @return Query
      */
     function orderBy($statement)
     {
@@ -204,7 +205,7 @@ class DBQuery
      *
      * @param int $param1
      * @param int $param2
-     * @return DBQuery
+     * @return Query
      */
     function limit($param1, $param2 = null)
     {
@@ -248,10 +249,10 @@ class DBQuery
     }
 
     /**
-     * Execute builded query
+     * Execute built query
      * This will prepare query, bind params and execute query
      *
-     * @return DBStatement
+     * @return Statement
      */
     function execute()
     {
@@ -260,7 +261,7 @@ class DBQuery
 
     /**
      * Clear previous assigned select columns
-     * @return DBQuery
+     * @return Query
      */
     function clearSelect()
     {
@@ -269,8 +270,8 @@ class DBQuery
     }
 
     /**
-     * Clear previous assigned groupby
-     * @return DBQuery
+     * Clear previous assigned group by
+     * @return Query
      */
     function clearGroupBy()
     {

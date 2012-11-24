@@ -6,21 +6,26 @@ MySQL datadabase wrapper for PHP extends PDO and PDOStatement classes and adds s
 Usage examples
 -----------------
 
+### Creating database instance
+    require "database.php";
+    $db = new database\DB("mysql:host=localhost;dbname=YOUR_DB_NAME", "YOUR_DB_USERNAME", "YOUR_DB_PASSWORD");
+
+If you're using your own autoloader, you don't need to require database.php script.
+
 ### Select
 Execute query and fetch User objects
 	
-	class User extends stdClass {}
+	class User {}
 	
 	$user_id = 1;
 	$sql = "SELECT * FROM users WHERE user_id = ? AND is_active = ?";
-	$user = DB::getInstance()
-		->executeQuery($sql, array($user_id, 1))
+	$user = $db->executeQuery($sql, array($user_id, 1))
 		->fetchInto(new User);
 	
 More complex, with query builder. You can build 'native' structure of objects.
 For example, you can fetch collection of object Post and every Post object may have a property $author which is a instance of User object
 
-	class User extends stdClass {
+	class User {
 
 	    function getName() {
 	        return $this->first_name . " ". $this->last_name;
@@ -36,8 +41,7 @@ For example, you can fetch collection of object Post and every Post object may h
 	}
 
 	DB::getInstance()->setFetchTableNames(1);
-	$sql = DB::getInstance()
-		->select("p.*, u.*")
+	$sql = $db->select("p.*, u.*")
 		->from("posts p")
 		->join("INNER JOIN users u USING(user_id)")
 		->where("u.user_id = ?", $user_id)
@@ -65,40 +69,38 @@ For example, you can fetch collection of object Post and every Post object may h
 		"email" => "user@example.com",
 		"mtime" => time()
 	);
-	DB::getInstance()->insert("users", $data);
+	$db->insert("users", $data);
 	
 ### Insert with prepared statement
-Third param for `insert()` method is "unique prepared stmt key". Every insert witch have that key will use the same prepared statement.
+Third param for `insert()` method is "unique prepared stmt key". Every insert which have that key will use the same prepared statement.
 
 	foreach($data_array as $data) {
-		DB::getInstance()->insert("users", $data, "unique_stmt_key");
+		$db->insert("users", $data, "unique_stmt_key");
 	}
 
 ### Update
 Some examples of update statement
 	
 	$user_id = 1;
-	DB::getInstance()->update("users", $data, "user_id = ?", $user_id);
-	DB::getInstance()->update("users", $data, "user_id = ? AND email = ?", array(1, "user@example.com"));
+	$db->update("users", $data, "user_id = ?", $user_id);
+	$db->update("users", $data, "user_id = ? AND email = ?", array(1, "user@example.com"));
 	
 	
 ### Saving data
 Automatic determination of INSERT or UPDATE. If $data['user_id'] exits it will be UPDATE, otherwise it will be INSERT.
 
-	DB::getInstance()->save("users", $data, "user_id"); // user_id is name of PRIMARY column
+	$db->save("users", $data, "user_id"); // user_id is name of PRIMARY column
 	
 ### More examples
 	
 	// Delete row in table
 	// some as DB::getInstance()->exec("DELETE FROM users WHERE user_id = 1");
-	DB::getInstance()->delete("users", "user_id = ?", $user_id);
+	$db->delete("users", "user_id = ?", $user_id);
 	
 	// Count rows in table
-	$count = DB::getInstance()->count("users");
+	$count = $db->count("users");
 	
 	/* @var User[] $users Collection of User objects */
-	$users = DB::getInstance()
-		->executeQuery("SELECT * FROM users")
-		->fetchCollection(new User);
+	$users = $db->executeQuery("SELECT * FROM users")->fetchCollection(new User);
 
 [See more examples for Sakila database](https://github.com/salebab/database/tree/master/sakila-examples)

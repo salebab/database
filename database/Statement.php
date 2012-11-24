@@ -1,18 +1,20 @@
 <?php
+namespace database;
+
 /**
- * DBStatement
+ * Statement
  *
  * @author Sasa
  */
-class DBStatement extends PDOStatement
+class Statement extends \PDOStatement
 {
 
     public $delimiter = ".";
 
     /**
-     * Instance of DBWrapper class
+     * Instance of DB class
      *
-     * @var DBWrapper
+     * @var DB
      */
     protected $db;
 
@@ -24,10 +26,9 @@ class DBStatement extends PDOStatement
     public $last_row;
 
     /**
-     *
-     * @param DBWrapper $db
+     * @param DB $db
      */
-    protected function __construct(DBWrapper $db)
+    protected function __construct(DB $db)
     {
         $this->db = $db;
     }
@@ -41,23 +42,23 @@ class DBStatement extends PDOStatement
      *
      * @param object $object
      * @param string $from_table If isn't used, method will return all data in one object
-     * @param int $fetch_from Fetch data from next or last fetched row. DBWrapper::FETCH_FROM_NEXT_ROW or DBWrapper::FETCH_FROM_LAST_ROW
+     * @param int $fetch_from Fetch data from next or last fetched row. DB::FETCH_FROM_NEXT_ROW or DB::FETCH_FROM_LAST_ROW
      * @return object|NULL
      */
-    function fetchInto($object, $from_table = "", $fetch_from = DBWrapper::FETCH_FROM_NEXT_ROW)
+    function fetchInto($object, $from_table = "", $fetch_from = DB::FETCH_FROM_NEXT_ROW)
     {
 
         if ($from_table == "") {
             $this->db->setFetchTableNames(0);
-            $this->setFetchMode(DBWrapper::FETCH_INTO, $object);
+            $this->setFetchMode(DB::FETCH_INTO, $object);
             return $this->fetch();
-        } elseif ($fetch_from == DBWrapper::FETCH_FROM_NEXT_ROW) {
-            $this->setFetchMode(DBWrapper::FETCH_ASSOC);
+        } elseif ($fetch_from == DB::FETCH_FROM_NEXT_ROW) {
+            $this->setFetchMode(DB::FETCH_ASSOC);
             $this->last_row = $this->fetch();
         }
 
         if (empty($this->last_row)) {
-            return NULL;
+            return null;
         }
 
         $table = "";
@@ -89,7 +90,7 @@ class DBStatement extends PDOStatement
 
     /**
      * Fetch data into object from last fetched row.
-     * This is shortcut for fetchInto($object, $from_table, DBWrapper::FETCH_FROM_LAST_ROW);
+     * This is shortcut for fetchInto($object, $from_table, DB::FETCH_FROM_LAST_ROW);
      *
      * @param object $object
      * @param string $from_table
@@ -97,7 +98,7 @@ class DBStatement extends PDOStatement
      */
     function fetchIntoFromLastRow($object, $from_table)
     {
-        return $this->fetchInto($object, $from_table, DBWrapper::FETCH_FROM_LAST_ROW);
+        return $this->fetchInto($object, $from_table, DB::FETCH_FROM_LAST_ROW);
     }
 
     /**
@@ -124,7 +125,7 @@ class DBStatement extends PDOStatement
      */
     function getColumnValue($column_name)
     {
-        return isset($this->last_row[$column_name]) ? $this->last_row[$column_name] : NULL;
+        return isset($this->last_row[$column_name]) ? $this->last_row[$column_name] : null;
     }
 
     function closeCursor()

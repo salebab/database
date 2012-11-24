@@ -1,10 +1,10 @@
 <?php
 include_once "_config.php";
-include_once "../database/DB.php";
+include_once "../database/database.php";
+$db = new database\DB(DB_DSN, DB_USER, DB_PASS);
 
-DB::getInstance()->setFetchTableNames(1);
-$stmt = DB::getInstance()
-    ->select("c.customer_id, c.first_name, c.last_name")
+$db->setFetchTableNames(1);
+$stmt = $db->select("c.customer_id, c.first_name, c.last_name")
     ->from("customer c")
     ->limit(5)
 
@@ -36,7 +36,7 @@ while($customer = $stmt->fetchInto(new stdClass, "c")) {
 
     $customers[] = $customer;
 }
-
+$db->setFetchTableNames(0); // reset to default
 echo "<pre>";
 print_r($customers);
 echo "</pre>";
