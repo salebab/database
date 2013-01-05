@@ -13,6 +13,7 @@ Because library extends [PDO driver](http://php.net/manual/en/book.pdo.php), you
 + `delete` - delete row(s) in database table
 + `count` - shortcut for SELECT COUNT(*) statement
 + `select` - query build object
++ `createQuery` - create new query builder
 + `getColumnsFromTable` - all columns from table as array
 
 ###Statement
@@ -34,6 +35,8 @@ Because library extends [PDO driver](http://php.net/manual/en/book.pdo.php), you
 + `limit` - LIMIT statement
 + `getQuery` - buld and return query string
 + `execute` - execute query
+
+See more information about [how to use database query builder](https://github.com/salebab/database/wiki/How-to-use-Database-query-builder).
 
 Usage examples
 -----------------
