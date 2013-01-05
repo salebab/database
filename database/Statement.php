@@ -47,7 +47,6 @@ class Statement extends \PDOStatement
      */
     function fetchInto($object, $from_table = "", $fetch_from = DB::FETCH_FROM_NEXT_ROW)
     {
-
         if ($from_table == "") {
             $this->db->setFetchTableNames(0);
             $this->setFetchMode(DB::FETCH_INTO, $object);
