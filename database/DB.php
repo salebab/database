@@ -169,8 +169,7 @@ class DB extends \PDO
      * @param string $table
      * @param array $data
      * @param int|string|null $stmt_key Unique key to use previous prepared stmt
-     *
-     * @return void
+     * @return Statement
      */
     function insert($table, $data, $stmt_key = null)
     {
@@ -190,6 +189,8 @@ class DB extends \PDO
         }
 
         $stmt->execute(array_values($data));
+
+        return $stmt;
     }
 
     /**
@@ -202,6 +203,7 @@ class DB extends \PDO
      * @param mixed $where
      * @param mixed|array $where_params
      * @param int|string|null $stmt_key Unique key to use previous prepared stmt
+     * @return Statement
      */
     function update($table, $data, $where, $where_params = array(), $stmt_key = null)
     {
@@ -229,8 +231,9 @@ class DB extends \PDO
             $stmt = $this->prev_stmt[$stmt_key];
         }
 
-
         $stmt->execute(array_merge(array_values($data), $where_params));
+
+        return $stmt;
     }
 
     /**
@@ -241,11 +244,14 @@ class DB extends \PDO
      * @param string $table
      * @param mixed $where
      * @param mixed $where_params
+     * @return Statement
      */
     function delete($table, $where, $where_params)
     {
         $sql = "DELETE FROM " . $table . $this->buildWhere($where);
-        $this->executeQuery($sql, $where_params);
+        $stmt = $this->executeQuery($sql, $where_params);
+
+        return $stmt;
     }
 
     /**
@@ -355,15 +361,15 @@ class DB extends \PDO
      * @param array $data
      * @param string $primary_key Name of primary key column
      * @param string|int $stmt_key
-     * @return void
+     * @return Statement
      */
     function save($table, $data, $primary_key, $stmt_key = null)
     {
         // Update if primary key exists in data set or insert new row
         if (!empty($data[$primary_key])) {
-            $this->update($table, $data, $primary_key . " = ?", $data[$primary_key], $stmt_key);
+            return $this->update($table, $data, $primary_key . " = ?", $data[$primary_key], $stmt_key);
         } else {
-            $this->insert($table, $data, $stmt_key);
+            return $this->insert($table, $data, $stmt_key);
         }
     }
 

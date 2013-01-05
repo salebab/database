@@ -114,7 +114,7 @@ class Statement extends \PDOStatement
             $class_name = get_class($class_name);
         }
 
-        return $this->fetchAll(PDO::FETCH_INTO, $class_name);
+        return $this->fetchAll(DB::FETCH_CLASS, $class_name);
     }
 
     /**
