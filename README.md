@@ -9,6 +9,7 @@ Because library extends [PDO driver](http://php.net/manual/en/book.pdo.php), you
 ###DB - The database class
 + `insert` - insert object or array as row to database table (optionaly: using prepared statement)
 + `update` - update existent row in database table (optionaly: using prepared statement)
++ `replace` - insert or replace (using REPLACE table... syntax)
 + `save` - save data to table (method determinate does insert or update will be used)
 + `delete` - delete row(s) in database table
 + `count` - shortcut for SELECT COUNT(*) statement
