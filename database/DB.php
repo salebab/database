@@ -13,6 +13,11 @@ class DB extends \PDO
     const FETCH_FROM_NEXT_ROW = 0;
     const FETCH_FROM_LAST_ROW = 1;
 
+
+    const INSERT = "INSERT INTO";
+    const UPDATE = "UPDATE";
+    const REPLACE = "REPLACE";
+
     /**
      * Previous prepared statements
      * @var Statement[]
@@ -116,38 +121,18 @@ class DB extends \PDO
     }
 
     /**
-     * Statement for INSERT
+     * Build and Get SET statement
      *
+     * $this->getSetStmt(DB::INSERT, "mytable", array("name" => "John"));
+     * will return:
+     * INSERT INTO
+     * @param string $syntax INSERT, UPDATE, REPLACE
      * @param string $table
      * @param array $data
-     * @return Statement
+     * @param null $where
+     * @return \PDOStatement
      */
-    private function getInsertStmt($table, $data)
-    {
-        $columns = $question_marks = array();
-
-        foreach (array_keys($data) as $column) {
-            $columns[] = "`" . $column . "`";
-            $question_marks[] = "?";
-        }
-
-        $columns = implode(", ", $columns);
-        $question_marks = implode(", ", $question_marks);
-
-        $sql = "INSERT INTO `$table` ($columns) VALUES ($question_marks)";
-
-        return $this->prepare($sql);
-    }
-
-    /**
-     * Statement for UPDATE
-     *
-     * @param string $table
-     * @param array $data
-     * @param mixed $where
-     * @return Statement
-     */
-    private function getUpdateStmt($table, $data, $where = null)
+    private function getSetStmt($syntax, $table, $data, $where = null)
     {
         $columns = array();
 
@@ -156,11 +141,52 @@ class DB extends \PDO
         }
         $columns = implode(", ", $columns);
 
-        $sql = "UPDATE `$table` SET " . $columns . $this->buildWhere($where);
+        $sql = "$syntax `$table` SET " . $columns . $this->buildWhere($where);
 
         return $this->prepare($sql);
     }
 
+    /**
+     * Perform INSERT, UPDATE, REPLACE
+     *
+     * @param string $syntax
+     * @param string $table
+     * @param array $data
+     * @param null $where
+     * @param array $where_params
+     * @param null $stmt_key
+     * @return Statement|\PDOStatement
+     */
+    private function executeBySyntax($syntax, $table, $data, $where = null, $where_params = array(), $stmt_key = null)
+    {
+        if (!is_null($where) && !is_array($where)) {
+            $where = array($where);
+        }
+
+        if (is_object($data)) {
+            $data = (array) $data;
+        }
+
+        $data = $this->removeNonExistentColumns($table, $data, $stmt_key);
+
+        // support for scalar param
+        if (!is_array($where_params)) {
+            $where_params = array($where_params);
+        }
+
+        if (empty($stmt_key)) {
+            $stmt = $this->getSetStmt($syntax, $table, $data, $where);
+        } elseif (empty($this->prev_stmt[$stmt_key])) {
+            $stmt = $this->getSetStmt($syntax, $table, $data, $where);
+            $this->prev_stmt[$stmt_key] = $stmt;
+        } else {
+            $stmt = $this->prev_stmt[$stmt_key];
+        }
+
+        $stmt->execute(array_merge(array_values($data), $where_params));
+
+        return $stmt;
+    }
     /**
      * Insert one row
      *
@@ -173,24 +199,7 @@ class DB extends \PDO
      */
     function insert($table, $data, $stmt_key = null)
     {
-        if (is_object($data)) {
-            $data = (array)$data;
-        }
-
-        $data = $this->removeNonExistentColumns($table, $data, $stmt_key);
-
-        if (empty($stmt_key)) {
-            $stmt = $this->getInsertStmt($table, $data);
-        } elseif (empty($this->prev_stmt[$stmt_key])) {
-            $this->prev_stmt[$stmt_key] = $this->getInsertStmt($table, $data);
-            $stmt = $this->prev_stmt[$stmt_key];
-        } else {
-            $stmt = $this->prev_stmt[$stmt_key];
-        }
-
-        $stmt->execute(array_values($data));
-
-        return $stmt;
+        return $this->executeBySyntax(self::INSERT, $table, $data, null, array(), $stmt_key);
     }
 
     /**
@@ -207,33 +216,22 @@ class DB extends \PDO
      */
     function update($table, $data, $where, $where_params = array(), $stmt_key = null)
     {
-        if (!is_array($where)) {
-            $where = array($where);
-        }
+        return $this->executeBySyntax(self::UPDATE, $table, $data, $where, $where_params, $stmt_key);
+    }
 
-        if (is_object($data)) {
-            $data = (array)$data;
-        }
-
-        $data = $this->removeNonExistentColumns($table, $data, $stmt_key);
-
-        // support for scalar param
-        if (!is_array($where_params)) {
-            $where_params = array($where_params);
-        }
-
-        if (empty($stmt_key)) {
-            $stmt = $this->getUpdateStmt($table, $data, $where);
-        } elseif (empty($this->prev_stmt[$stmt_key])) {
-            $stmt = $this->getUpdateStmt($table, $data, $where);
-            $this->prev_stmt[$stmt_key] = $stmt;
-        } else {
-            $stmt = $this->prev_stmt[$stmt_key];
-        }
-
-        $stmt->execute(array_merge(array_values($data), $where_params));
-
-        return $stmt;
+    /**
+     * Insert or replace row in a table
+     *
+     * @throw PDOException
+     *
+     * @param string $table
+     * @param array $data
+     * @param int|string|null $stmt_key
+     * @return Statement
+     */
+    function replace($table, $data, $stmt_key = null)
+    {
+        return $this->executeBySyntax(self::REPLACE, $table, $data, null, array(), $stmt_key);
     }
 
     /**
