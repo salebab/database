@@ -88,7 +88,7 @@ For example, you can fetch collection of objects **Post** and every **Post** obj
 	}
 
 	// Library need FETCH_TABLE_NAMES option for mapping class names and table names
-	DB::getInstance()->setFetchTableNames(1);
+	$db->setFetchTableNames(1);
 
 	$sql = $db->select("p.*, u.*")
 		->from("posts p")
@@ -148,7 +148,7 @@ Automatic determination of INSERT or UPDATE. If $data['user_id'] exits it will b
 ### More examples
 	
 	// Delete row in table
-	// some as DB::getInstance()->exec("DELETE FROM users WHERE user_id = 1");
+	// some as $db->exec("DELETE FROM users WHERE user_id = 1");
 	$db->delete("users", "user_id = ?", $user_id);
 	
 	// Count rows in table
