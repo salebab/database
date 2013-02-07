@@ -14,13 +14,14 @@ class Query
     protected $where = array();
     protected $having = array();
     protected $join = array();
-    public $params = array();
+    protected $params = array();
     protected $orderBy = array();
     protected $groupBy = array();
     protected $limit = "";
 
 
     /**
+     * DB instance
      * @var DB
      */
     protected $db;
@@ -30,7 +31,7 @@ class Query
      *
      * @param DB $db
      */
-    function __construct(DB $db)
+    public function __construct(DB $db)
     {
         $this->db = $db;
     }
@@ -45,9 +46,10 @@ class Query
      * @param string $statement
      * @return Query
      */
-    function select($statement)
+    public function select($statement)
     {
         $this->select[] = $statement;
+
         return $this;
     }
 
@@ -61,9 +63,10 @@ class Query
      * @param string $statement
      * @return Query
      */
-    function from($statement)
+    public function from($statement)
     {
         $this->from[] = $statement;
+
         return $this;
     }
 
@@ -78,53 +81,44 @@ class Query
      * @param mixed $params
      * @return Query
      */
-    function where($statement, $params = null)
+    public function where($statement, $params = null)
     {
         $this->where[] = $statement;
 
-        // add param(s) to stack
-        if ($params !== null) {
-            if (is_array($params)) {
-                foreach ($params as $param) {
-                    $this->params[] = $param;
-                }
-            } else {
-                $this->params[] = $params;
-            }
-        }
+        $this->addParams($params);
 
         return $this;
     }
 
     /**
+     * Add where in statement
+     *
      * @param string $column
      * @param array $params
-     * @param bool $not_in Use NOT IN statement
+     *
      * @return Query
      */
-    function whereIn($column, $params, $not_in = false)
+    public function whereIn($column, $params)
     {
-        $qm = array_fill(0, count($params), "?");
-        $in = ($not_in) ? "NOT IN" : "IN";
-        $this->where[] = $column . " " . $in . " (" . implode(", ", $qm) . ")";
+        $this->prepareWhereInStatement($column, $params, false);
 
-        foreach ($params as $param) {
-            $this->params[] = $param;
-        }
+        $this->addParams($params);
 
         return $this;
     }
 
     /**
-     * Where NOT IN statement
+     * Add where not in statement
      *
      * @param $column
      * @param $params
      * @return Query
      */
-    function whereNotIn($column, $params)
+    public function whereNotIn($column, $params)
     {
-        return $this->whereIn($column, $params, true);
+        $this->prepareWhereInStatement($column, $params, true);
+
+        return $this;
     }
 
     /**
@@ -133,18 +127,11 @@ class Query
      * @param mixed $params
      * @return Query
      */
-    function having($statement, $params = null)
+    public function having($statement, $params = null)
     {
         $this->having[] = $statement;
 
-        // add param(s) to stack
-        if ($params !== null) {
-            if (is_array($params)) {
-                $this->params = array_merge($this->params, $params);
-            } else {
-                $this->params[] = $params;
-            }
-        }
+        $this->addParams($params);
 
         return $this;
     }
@@ -158,9 +145,10 @@ class Query
      * @param string $statement
      * @return Query
      */
-    function join($statement)
+    public function join($statement)
     {
         $this->join[] = $statement;
+
         return $this;
     }
 
@@ -174,9 +162,10 @@ class Query
      * @param string $statement
      * @return Query
      */
-    function groupBy($statement)
+    public function groupBy($statement)
     {
         $this->groupBy[] = $statement;
+
         return $this;
     }
 
@@ -190,9 +179,10 @@ class Query
      * @param string $statement
      * @return Query
      */
-    function orderBy($statement)
+    public function orderBy($statement)
     {
         $this->orderBy[] = $statement;
+
         return $this;
     }
 
@@ -203,49 +193,48 @@ class Query
      * $sql->limit(30);
      * $sql->limit(30,30);
      *
-     * @param int $param1
-     * @param int $param2
+     * @param int $limit
+     * @param int $offset
      * @return Query
      */
-    function limit($param1, $param2 = null)
+    public function limit($limit, $offset = null)
     {
-        $this->limit = $param1;
-        if (!is_null($param2)) {
-            $this->limit .= ", " . $param2;
-        }
+        $this->limit = '';
+        ! is_null($offset) and $this->limit = $offset.', ';
+        $this->limit .= $limit;
+
         return $this;
     }
 
-
-    function getQuery()
+    /**
+     * Returns generated SQL query
+     *
+     * @return string
+     */
+    public function getQuery()
     {
-        if (empty($this->select)) {
-            $this->select("*");
-        }
-        $sql = "SELECT " . implode(", ", $this->select) . " "
-            . "FROM " . implode(", ", $this->from) . " ";
-        if (!empty($this->join)) {
-            $sql .= implode(" ", $this->join) . " ";
-        }
-        if (!empty($this->where)) {
-            $sql .= "WHERE ";
-            $sql .= implode(" AND ", $this->where) . " ";
-        }
-        if (!empty($this->groupBy)) {
-            $sql .= "GROUP BY ";
-            $sql .= implode(", ", $this->groupBy) . " ";
-        }
-        if (!empty($this->having)) {
-            $sql .= "HAVING ";
-            $sql .= implode(", ", $this->having) . " ";
-        }
-        if (!empty($this->orderBy)) {
-            $sql .= "ORDER BY " . implode(", ", $this->orderBy) . " ";
-        }
-        if (!empty($this->limit)) {
-            $sql .= "LIMIT " . $this->limit;
-        }
+        $sql  = $this->prepareSelectString();
+        $sql .= $this->prepareJoinString();
+        $sql .= $this->prepareWhereString();
+        $sql .= $this->prepareGroupByString();
+        $sql .= $this->prepareHavingString();
+        $sql .= $this->prepareOrderByString();
+        $sql .= $this->prepareLimitString();
+
         return $sql;
+    }
+
+    /**
+     * Returns prepared select string
+     *
+     * @return string
+     */
+    private function prepareSelectString()
+    {
+        empty($this->select) and $this->select("*");
+
+        return "SELECT ".implode(", ", $this->select)." "
+            ."FROM ".implode(", ", $this->from)." ";
     }
 
     /**
@@ -266,6 +255,7 @@ class Query
     function clearSelect()
     {
         $this->select = array();
+
         return $this;
     }
 
@@ -276,7 +266,131 @@ class Query
     function clearGroupBy()
     {
         $this->groupBy = array();
+
         return $this;
     }
 
+    /**
+     * Add param(s) to stack
+     *
+     * @param array $params
+     *
+     * @return void
+     */
+    public function addParams($params)
+    {
+        if (is_null($params))
+        {
+            return;
+        }
+
+        ! is_array($params) and $params = array($params);
+        $this->params = array_merge($this->params, $params);
+    }
+
+    /**
+     * Prepares where in statement
+     *
+     * @param string $column
+     * @param array $params
+     * @param bool $not_in Use NOT IN statement
+     *
+     * @return void
+     */
+    private function prepareWhereInStatement($column, $params, $not_in = false)
+    {
+        $qm            = array_fill(0, count($params), "?");
+        $in            = ($not_in) ? "NOT IN" : "IN";
+        $this->where[] = $column." ".$in." (".implode(", ", $qm).")";
+    }
+
+    /**
+     * Returns prepared join string
+     *
+     * @return string
+     */
+    private function prepareJoinString()
+    {
+        if (! empty($this->join))
+        {
+            return implode(" ", $this->join)." ";
+        }
+
+        return '';
+    }
+
+    /**
+     * Returns prepared where string
+     *
+     * @return string
+     */
+    private function prepareWhereString()
+    {
+        if (! empty($this->where))
+        {
+            return "WHERE ".implode(" AND ", $this->where)." ";
+        }
+
+        return '';
+    }
+
+    /**
+     * Returns prepared group by string
+     *
+     * @return string
+     */
+    private function prepareGroupByString()
+    {
+        if (! empty($this->groupBy))
+        {
+            return  "GROUP BY ".implode(", ", $this->groupBy)." ";
+        }
+
+        return '';
+    }
+
+    /**
+     * Returns prepared having string
+     *
+     * @return string
+     */
+    private function prepareHavingString()
+    {
+        if (! empty($this->having))
+        {
+            return "HAVING ".implode(", ", $this->having)." ";
+        }
+
+        return '';
+    }
+
+    /**
+     * Returns prepared order by string
+     *
+     * @return string
+     */
+    private function prepareOrderByString()
+    {
+        if (! empty($this->orderBy))
+        {
+            return "ORDER BY ".implode(", ", $this->orderBy)." ";
+        }
+
+        return '';
+    }
+
+    /**
+     * Returns prepared limit string
+     *
+     * @return string
+     */
+    private function prepareLimitString()
+    {
+        if (! empty($this->limit))
+        {
+            return "LIMIT ".$this->limit;
+        }
+
+        return '';
+    }
 }
