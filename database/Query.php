@@ -84,7 +84,6 @@ class Query
     public function where($statement, $params = null)
     {
         $this->where[] = $statement;
-
         $this->addParams($params);
 
         return $this;
@@ -101,7 +100,6 @@ class Query
     public function whereIn($column, $params)
     {
         $this->prepareWhereInStatement($column, $params, false);
-
         $this->addParams($params);
 
         return $this;
@@ -130,7 +128,6 @@ class Query
     public function having($statement, $params = null)
     {
         $this->having[] = $statement;
-
         $this->addParams($params);
 
         return $this;
@@ -200,7 +197,11 @@ class Query
     public function limit($limit, $offset = null)
     {
         $this->limit = '';
-        !is_null($offset) and $this->limit = $offset . ', ';
+
+        if(!is_null($offset)) {
+            $this->limit = $offset . ', ';
+        }
+
         $this->limit .= $limit;
 
         return $this;
@@ -231,10 +232,11 @@ class Query
      */
     private function prepareSelectString()
     {
-        empty($this->select) and $this->select("*");
+        if(empty($this->select)) {
+            $this->select("*");
+        }
 
-        return "SELECT " . implode(", ", $this->select) . " "
-            . "FROM " . implode(", ", $this->from) . " ";
+        return "SELECT " . implode(", ", $this->select) . " FROM " . implode(", ", $this->from) . " ";
     }
 
     /**
@@ -243,7 +245,7 @@ class Query
      *
      * @return Statement
      */
-    function execute()
+    public function execute()
     {
         return $this->db->executeQuery($this->getQuery(), $this->params);
     }
@@ -252,7 +254,7 @@ class Query
      * Clear previous assigned select columns
      * @return Query
      */
-    function clearSelect()
+    public function clearSelect()
     {
         $this->select = array();
 
@@ -263,7 +265,7 @@ class Query
      * Clear previous assigned group by
      * @return Query
      */
-    function clearGroupBy()
+    public function clearGroupBy()
     {
         $this->groupBy = array();
 
@@ -283,7 +285,10 @@ class Query
             return;
         }
 
-        !is_array($params) and $params = array($params);
+        if(!is_array($params)) {
+            $params = array($params);
+        }
+
         $this->params = array_merge($this->params, $params);
     }
 
