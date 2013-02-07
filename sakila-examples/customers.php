@@ -27,6 +27,8 @@ $stmt = $db->select("c.customer_id, c.first_name, c.last_name")
     ->join("INNER JOIN store s ON s.store_id = c.store_id")
     ->join("INNER JOIN address sa ON sa.address_id = s.address_id")
 
+    ->where("c.customer_id > ?", 120)
+    ->where("c.customer_id < ?", 345)
     ->execute();
 
 $customers = array();

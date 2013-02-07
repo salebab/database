@@ -200,7 +200,7 @@ class Query
     public function limit($limit, $offset = null)
     {
         $this->limit = '';
-        ! is_null($offset) and $this->limit = $offset.', ';
+        !is_null($offset) and $this->limit = $offset . ', ';
         $this->limit .= $limit;
 
         return $this;
@@ -213,7 +213,7 @@ class Query
      */
     public function getQuery()
     {
-        $sql  = $this->prepareSelectString();
+        $sql = $this->prepareSelectString();
         $sql .= $this->prepareJoinString();
         $sql .= $this->prepareWhereString();
         $sql .= $this->prepareGroupByString();
@@ -233,8 +233,8 @@ class Query
     {
         empty($this->select) and $this->select("*");
 
-        return "SELECT ".implode(", ", $this->select)." "
-            ."FROM ".implode(", ", $this->from)." ";
+        return "SELECT " . implode(", ", $this->select) . " "
+            . "FROM " . implode(", ", $this->from) . " ";
     }
 
     /**
@@ -279,12 +279,11 @@ class Query
      */
     public function addParams($params)
     {
-        if (is_null($params))
-        {
+        if (is_null($params)) {
             return;
         }
 
-        ! is_array($params) and $params = array($params);
+        !is_array($params) and $params = array($params);
         $this->params = array_merge($this->params, $params);
     }
 
@@ -299,9 +298,9 @@ class Query
      */
     private function prepareWhereInStatement($column, $params, $not_in = false)
     {
-        $qm            = array_fill(0, count($params), "?");
-        $in            = ($not_in) ? "NOT IN" : "IN";
-        $this->where[] = $column." ".$in." (".implode(", ", $qm).")";
+        $qm = array_fill(0, count($params), "?");
+        $in = ($not_in) ? "NOT IN" : "IN";
+        $this->where[] = $column . " " . $in . " (" . implode(", ", $qm) . ")";
     }
 
     /**
@@ -311,9 +310,8 @@ class Query
      */
     private function prepareJoinString()
     {
-        if (! empty($this->join))
-        {
-            return implode(" ", $this->join)." ";
+        if (!empty($this->join)) {
+            return implode(" ", $this->join) . " ";
         }
 
         return '';
@@ -326,9 +324,8 @@ class Query
      */
     private function prepareWhereString()
     {
-        if (! empty($this->where))
-        {
-            return "WHERE ".implode(" AND ", $this->where)." ";
+        if (!empty($this->where)) {
+            return "WHERE " . implode(" AND ", $this->where) . " ";
         }
 
         return '';
@@ -341,9 +338,8 @@ class Query
      */
     private function prepareGroupByString()
     {
-        if (! empty($this->groupBy))
-        {
-            return  "GROUP BY ".implode(", ", $this->groupBy)." ";
+        if (!empty($this->groupBy)) {
+            return "GROUP BY " . implode(", ", $this->groupBy) . " ";
         }
 
         return '';
@@ -356,9 +352,8 @@ class Query
      */
     private function prepareHavingString()
     {
-        if (! empty($this->having))
-        {
-            return "HAVING ".implode(", ", $this->having)." ";
+        if (!empty($this->having)) {
+            return "HAVING " . implode(", ", $this->having) . " ";
         }
 
         return '';
@@ -371,9 +366,8 @@ class Query
      */
     private function prepareOrderByString()
     {
-        if (! empty($this->orderBy))
-        {
-            return "ORDER BY ".implode(", ", $this->orderBy)." ";
+        if (!empty($this->orderBy)) {
+            return "ORDER BY " . implode(", ", $this->orderBy) . " ";
         }
 
         return '';
@@ -386,9 +380,8 @@ class Query
      */
     private function prepareLimitString()
     {
-        if (! empty($this->limit))
-        {
-            return "LIMIT ".$this->limit;
+        if (!empty($this->limit)) {
+            return "LIMIT " . $this->limit;
         }
 
         return '';
