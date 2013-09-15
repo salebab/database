@@ -319,7 +319,6 @@ class DB extends \PDO
      */
     function createQuery()
     {
-        include_once 'Query.php';
         return new Query($this);
     }
 

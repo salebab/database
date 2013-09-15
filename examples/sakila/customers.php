@@ -1,6 +1,8 @@
 <?php
 include_once "_config.php";
-include_once "../database/database.php";
+include_once "../../src/database/DB.php";
+include_once "../../src/database/Statement.php";
+include_once "../../src/database/Query.php";
 
 class Customer {}
 class City {}

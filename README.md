@@ -157,4 +157,4 @@ Automatic determination of INSERT or UPDATE. If $data['user_id'] exits it will b
 	/* @var User[] $users Collection of User objects */
 	$users = $db->executeQuery("SELECT * FROM users")->fetchCollection(new User);
 
-[See more examples for Sakila database](https://github.com/salebab/database/tree/master/sakila-examples)
+[See more examples for Sakila database](https://github.com/salebab/database/tree/master/examples/sakila)
