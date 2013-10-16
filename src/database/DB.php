@@ -58,9 +58,7 @@ class DB extends \PDO
         // Default options
         $options = $options + array(
             \PDO::ATTR_STATEMENT_CLASS => array("database\\Statement", array($this)),
-            \PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES UTF8",
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-            \PDO::ATTR_EMULATE_PREPARES => false
         );
 
         try {
