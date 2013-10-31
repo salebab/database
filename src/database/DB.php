@@ -13,10 +13,16 @@ class DB extends \PDO
     const FETCH_FROM_NEXT_ROW = 0;
     const FETCH_FROM_LAST_ROW = 1;
 
-
     const INSERT = "INSERT INTO";
     const UPDATE = "UPDATE";
     const REPLACE = "REPLACE";
+
+    private static $config = array();
+
+    /**
+     * @var DB[]
+     */
+    private static $instances = array();
 
     /**
      * Previous prepared statements
@@ -47,14 +53,53 @@ class DB extends \PDO
     public $fetch_table_names = 0;
 
     /**
+     * @param string $instance
+     * @return DB
+     * @throws \Exception
+     */
+    static function getInstance($instance = 'default')
+    {
+        if(!array_key_exists($instance, self::$instances)) {
+            // check if configuration exists
+            if(!array_key_exists($instance, self::$config)) {
+                throw new \Exception("Configuration is not set. Use DB::setConfig(options, [instance]) to set");
+            }
+
+            self::$instances[$instance] = new self(
+                self::$config[$instance]["dsn"],
+                self::$config[$instance]["username"],
+                self::$config[$instance]["password"],
+                self::$config[$instance]["options"]
+            );
+        }
+
+        return self::$instances[$instance];
+    }
+
+    /**
+     * Set database config params
+     * config param should contains dsn, username, password and options
+     * 
+     * @param array $config
+     * @param string $instance
+     */
+    static function setConfig($config, $instance = 'default')
+    {
+        self::$config[$instance]['dsn'] = array_key_exists('dsn', $config) ? $config['dsn'] : "";
+        self::$config[$instance]['username'] = array_key_exists('username', $config) ? $config['username'] : null;
+        self::$config[$instance]['password'] = array_key_exists('password', $config) ? $config['password'] : null;
+        self::$config[$instance]['options'] = array_key_exists('options', $config) ? $config['options'] : array();
+    }
+
+    /**
+     * @throws \PDOException|\Exception
      * @param string $dsn
-     * @param null|string $username
-     * @param null|string $password
+     * @param null $username
+     * @param null $password
      * @param array $options
      */
     function __construct($dsn, $username = null, $password = null, $options = array())
     {
-
         // Default options
         $options = $options + array(
             \PDO::ATTR_STATEMENT_CLASS => array("database\\Statement", array($this)),
@@ -64,7 +109,9 @@ class DB extends \PDO
         try {
             parent::__construct($dsn, $username, $password, $options);
         } catch (\PDOException $e) {
-            exit('Database connection error');
+            throw $e;
+        } catch(\Exception $e) {
+            throw $e;
         }
     }
 
