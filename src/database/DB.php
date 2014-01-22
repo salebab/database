@@ -53,6 +53,11 @@ class DB extends \PDO
     public $fetch_table_names = 0;
 
     /**
+     * @var \Closure
+     */
+    private static $exception_callback;
+
+    /**
      * @param string $instance
      * @return DB
      * @throws \Exception
@@ -107,11 +112,14 @@ class DB extends \PDO
         );
 
         try {
-            parent::__construct($dsn, $username, $password, $options);
-        } catch (\PDOException $e) {
-            throw $e;
-        } catch(\Exception $e) {
-            throw $e;
+            // We're using @ because PDO produces Warning before PDOException.
+            @parent::__construct($dsn, $username, $password, $options);
+        } catch (\Exception $e) {
+            if(null !== self::$exception_callback && is_callable(self::$exception_callback)) {
+                call_user_func_array(self::$exception_callback, array($e));
+            } else {
+                throw $e;
+            }
         }
     }
 
@@ -425,5 +433,15 @@ class DB extends \PDO
     {
         $this->setAttribute(self::ATTR_FETCH_TABLE_NAMES, $option);
         $this->fetch_table_names = $option;
+    }
+
+    /**
+     * Register exception callback
+     * If connection to server fails, exception will be passed to callback as first param
+     * @param \Closure $callback
+     */
+    public static function registerExceptionCallback($callback)
+    {
+        self::$exception_callback = $callback;
     }
 }
