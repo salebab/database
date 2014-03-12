@@ -321,17 +321,24 @@ class DB extends \PDO
         return $stmt->fetchColumn();
     }
 
+    /**
+     * @deprecated since version 1.0
+     */
+    function executeQuery($sql, $params = null)
+    {
+        return $this->execQueryString($sql, $params);
+    }
 
     /**
      * Prepare & execute query with params
      *
      * @throw PDOException
      *
-     * @param $sql
-     * @param null $params
+     * @param string $sql
+     * @param array|null $params
      * @return Statement
      */
-    function executeQuery($sql, $params = null)
+    function execQueryString($sql, $params = null)
     {
         if (!is_array($params) && !is_null($params)) {
             $params = array($params);
@@ -340,6 +347,15 @@ class DB extends \PDO
         $stmt = $this->prepare($sql);
         $stmt->execute($params);
         return $stmt;
+    }
+
+    /**
+     * @param Query $query
+     * @return Statement
+     */
+    public function execQuery(Query $query)
+    {
+        return $this->execQueryString($query->getQuery(), $query->getParams());
     }
 
     /**
@@ -383,7 +399,7 @@ class DB extends \PDO
      */
     function select($statement = "")
     {
-        return self::createQuery()->select($statement);
+        return $this->createQuery()->select($statement);
     }
 
     /**
