@@ -115,6 +115,7 @@ class Query
     public function whereNotIn($column, $params)
     {
         $this->prepareWhereInStatement($column, $params, true);
+        $this->addParams($params);
 
         return $this;
     }
