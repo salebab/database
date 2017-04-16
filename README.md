@@ -6,7 +6,7 @@ PDO wrapper extends PDO and PDOStatement classes and add some nice methods as in
 API
 ---
 Because library extends [PDO driver](http://php.net/manual/en/book.pdo.php), you can use all of native PDO methods and new additional:
-###DB - The database class
+### DB - The database class
 + `insert` - insert object or array as row to database table (optionaly: using prepared statement)
 + `update` - update existent row in database table (optionaly: using prepared statement)
 + `replace` - insert or replace (using REPLACE table... syntax)
@@ -17,13 +17,13 @@ Because library extends [PDO driver](http://php.net/manual/en/book.pdo.php), you
 + `createQuery` - create new query builder
 + `getColumnsFromTable` - all columns from table as array
 
-###Statement
+### Statement
 + `fetchInto` - fetch row into object (optionaly: only from specific table)
 + `fetchIntoFromLastRow` - fetch another object from last row (based on table name)
 + `fetchCollection` - fetch collection of objects (custom defined object or stdClass)
 + `getColumnValue` - value from specific column
 
-###Query - Build SQL query object
+### Query - Build SQL query object
 + `select` - statement for SELECT
 + `from` - statement for FROM
 + `where` - adding new WHERE statement. Multiple where will be joined by AND
